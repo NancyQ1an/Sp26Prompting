@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scholr — Class Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1916;
+    --surface2: #242220;
+    --border: #2e2c28;
+    --accent: #e8c547;
+    --accent2: #e8834a;
+    --text: #f0ece4;
+    --muted: #7a756a;
+    --danger: #e85f5f;
+    --green: #5fbf8a;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* LAYOUT */
+  .app { display: flex; height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 0;
+    overflow-y: auto;
+  }
+
+  .logo {
+    padding: 0 24px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; display: block; margin-top: 2px; }
+
+  .sidebar-section { padding: 20px 24px 0; }
+  .sidebar-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .class-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-bottom: 4px;
+    position: relative;
+  }
+
+  .class-item:hover { background: var(--surface2); }
+  .class-item.active { background: var(--surface2); }
+  .class-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 3px; height: 60%;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  .class-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .class-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .class-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 20px;
+  }
+
+  .add-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 13px;
+    transition: color 0.15s;
+    margin-top: 4px;
+  }
+  .add-btn:hover { color: var(--accent); }
+  .add-btn svg { opacity: 0.6; }
+
+  .sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 24px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--muted);
+    transition: color 0.15s;
+  }
+  .nav-item:hover { color: var(--text); }
+  .nav-item.active { color: var(--accent); }
+
+  /* MAIN */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .topbar {
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+  }
+
+  .topbar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .topbar-actions { display: flex; gap: 10px; }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #111;
+  }
+  .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+  /* CONTENT */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px;
+  }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .stat-card:hover::after { opacity: 1; }
+
+  .stat-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .stat-value { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; margin: 6px 0 0; }
+  .stat-value.yellow { color: var(--accent); }
+  .stat-value.orange { color: var(--accent2); }
+  .stat-value.green { color: var(--green); }
+
+  /* COLUMNS */
+  .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .panel-action {
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: 'DM Sans', sans-serif;
+    padding: 4px 10px;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+
+  .panel-action:hover { background: rgba(232, 197, 71, 0.12); }
+
+  /* ASSIGNMENT ITEMS */
+  .assignment-list { padding: 8px 0; }
+
+  .assignment-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 20px;
+    transition: background 0.12s;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    animation: slideIn 0.25s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .assignment-item:last-child { border-bottom: none; }
+  .assignment-item:hover { background: var(--surface2); }
+
+  .check-circle {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    margin-top: 1px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .check-circle:hover { border-color: var(--green); }
+  .check-circle.done { background: var(--green); border-color: var(--green); }
+  .check-circle.done::after { content: '✓'; font-size: 10px; color: #111; font-weight: 700; }
+
+  .assignment-info { flex: 1; min-width: 0; }
+
+  .assignment-name {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.15s;
+  }
+
+  .assignment-item.done .assignment-name {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .assignment-meta {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .tag-class { background: rgba(232, 197, 71, 0.12); color: var(--accent); }
+  .tag-due { background: rgba(232, 131, 74, 0.12); color: var(--accent2); }
+  .tag-overdue { background: rgba(232, 95, 95, 0.15); color: var(--danger); }
+  .tag-type { background: var(--surface2); color: var(--muted); }
+
+  .delete-btn {
+    opacity: 0;
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: opacity 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+
+  .assignment-item:hover .delete-btn { opacity: 1; }
+  .delete-btn:hover { background: rgba(232, 95, 95, 0.12); }
+
+  /* SCHEDULE */
+  .schedule-list { padding: 8px 0; }
+
+  .schedule-day { padding: 10px 20px 4px; }
+  .day-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .class-block {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    border-left: 3px solid;
+    background: var(--surface2);
+    animation: slideIn 0.2s ease both;
+  }
+
+  .class-block-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    width: 70px;
+    flex-shrink: 0;
+  }
+
+  .class-block-name { font-size: 13px; font-weight: 500; }
+  .class-block-loc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 440px;
+    max-width: 90vw;
+    padding: 28px;
+    animation: modalIn 0.2s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+
+  .form-group { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--surface); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+
+  .color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+  .color-swatch {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .color-swatch:hover { transform: scale(1.15); }
+  .color-swatch.selected { border-color: white; }
+
+  /* EMPTY */
+  .empty-state {
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 28px; margin-bottom: 8px; opacity: 0.4; }
+  .empty-state p { font-size: 12px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    color: var(--text);
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 200;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .columns { grid-template-columns: 1fr; }
+    .sidebar { width: 220px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <h1>Scholr</h1>
+      <span id="semester-label">Spring 2026</span>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Classes</div>
+      <div id="class-list-sidebar"></div>
+      <div class="add-btn" onclick="openModal('class')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Class
+      </div>
+    </div>
+
+    <hr class="sidebar-divider">
+
+    <div class="nav-item active" onclick="setView('dashboard', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="setView('schedule', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Schedule
+    </div>
+    <div class="nav-item" onclick="setView('all', this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
+      All Assignments
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" onclick="openModal('class')">+ Class</button>
+        <button class="btn btn-primary" onclick="openModal('assignment')">+ Assignment</button>
+      </div>
+    </div>
+
+    <div class="content" id="main-content"></div>
+  </main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-class">
+  <div class="modal">
+    <div class="modal-title" id="class-modal-title">Add a Class</div>
+    <div class="form-group">
+      <label>Class Name</label>
+      <input type="text" id="class-name-input" placeholder="e.g. Calculus II">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Instructor</label>
+        <input type="text" id="class-instructor" placeholder="Prof. Smith">
+      </div>
+      <div class="form-group">
+        <label>Room / Location</label>
+        <input type="text" id="class-room" placeholder="Hall 204">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Color</label>
+      <div class="color-picker" id="color-picker"></div>
+    </div>
+    <div class="form-group">
+      <label>Meeting Days</label>
+      <div id="day-picker" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Start Time</label>
+        <input type="time" id="class-start" value="09:00">
+      </div>
+      <div class="form-group">
+        <label>End Time</label>
+        <input type="time" id="class-end" value="10:00">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('class')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClass()">Save Class</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-assignment">
+  <div class="modal">
+    <div class="modal-title">Add Assignment</div>
+    <div class="form-group">
+      <label>Assignment Title</label>
+      <input type="text" id="assign-name" placeholder="e.g. Problem Set 3">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Class</label>
+        <select id="assign-class"></select>
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select id="assign-type">
+          <option>Homework</option>
+          <option>Essay</option>
+          <option>Project</option>
+          <option>Exam</option>
+          <option>Quiz</option>
+          <option>Lab</option>
+          <option>Reading</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Due Date</label>
+        <input type="date" id="assign-due">
+      </div>
+      <div class="form-group">
+        <label>Priority</label>
+        <select id="assign-priority">
+          <option>Normal</option>
+          <option>High</option>
+          <option>Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="assign-notes" rows="2" placeholder="Optional notes..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('assignment')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAssignment()">Add Assignment</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const COLORS = ['#e8c547','#e8834a','#5fbf8a','#5f9fe8','#c55fbf','#e85f5f','#5fbbba','#a08fe8'];
+
+let classes = JSON.parse(localStorage.getItem('scholr_classes') || '[]');
+let assignments = JSON.parse(localStorage.getItem('scholr_assignments') || '[]');
+let selectedColor = COLORS[0];
+let selectedDays = [];
+let currentView = 'dashboard';
+
+function save() {
+  localStorage.setItem('scholr_classes', JSON.stringify(classes));
+  localStorage.setItem('scholr_assignments', JSON.stringify(assignments));
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const [y, m, day] = d.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[+m-1]} ${+day}`;
+}
+
+function isOverdue(due) {
+  if (!due) return false;
+  return new Date(due) < new Date(new Date().toDateString());
+}
+
+function dueLabel(due) {
+  if (!due) return '';
+  const today = new Date(new Date().toDateString());
+  const d = new Date(due);
+  const diff = Math.round((d - today) / 86400000);
+  if (diff < 0) return 'Overdue';
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  return formatDate(due);
+}
+
+function classColor(classId) {
+  const c = classes.find(c => c.id === classId);
+  return c ? c.color : '#7a756a';
+}
+
+function className(classId) {
+  const c = classes.find(c => c.id === classId);
+  return c ? c.name : 'Unknown';
+}
+
+// SIDEBAR
+function renderSidebar() {
+  const list = document.getElementById('class-list-sidebar');
+  if (classes.length === 0) {
+    list.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:4px 10px;">No classes yet</div>`;
+    return;
+  }
+  list.innerHTML = classes.map(c => {
+    const count = assignments.filter(a => a.classId === c.id && !a.done).length;
+    return `
+      <div class="class-item" onclick="filterByClass('${c.id}')">
+        <div class="class-dot" style="background:${c.color}"></div>
+        <span class="class-name">${c.name}</span>
+        ${count > 0 ? `<span class="class-count">${count}</span>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// STATS
+function renderStats() {
+  const total = assignments.length;
+  const done = assignments.filter(a => a.done).length;
+  const upcoming = assignments.filter(a => !a.done && !isOverdue(a.due)).length;
+  const overdue = assignments.filter(a => !a.done && isOverdue(a.due)).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  return `
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Assignments</div>
+        <div class="stat-value">${total}</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Completed</div>
+        <div class="stat-value green">${done}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Upcoming</div>
+        <div class="stat-value yellow">${upcoming}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Overdue</div>
+        <div class="stat-value orange">${overdue}</div>
+      </div>
+    </div>
+  `;
+}
+
+// ASSIGNMENT LIST
+function renderAssignmentList(items, title = 'UPCOMING') {
+  if (items.length === 0) {
+    return `<div class="empty-state"><div class="icon">📭</div><p>No assignments here</p></div>`;
+  }
+  return `<div class="assignment-list">${items.map(a => renderAssignmentItem(a)).join('')}</div>`;
+}
+
+function renderAssignmentItem(a) {
+  const overdue = !a.done && isOverdue(a.due);
+  const label = dueLabel(a.due);
+  const cc = classColor(a.classId);
+  const cn = className(a.classId);
+  return `
+    <div class="assignment-item ${a.done ? 'done' : ''}" id="asgn-${a.id}">
+      <div class="check-circle ${a.done ? 'done' : ''}" onclick="toggleDone('${a.id}')"></div>
+      <div class="assignment-info">
+        <div class="assignment-name">${a.name}</div>
+        <div class="assignment-meta">
+          <span class="tag tag-class" style="background:${cc}22;color:${cc}">${cn}</span>
+          <span class="tag tag-type">${a.type}</span>
+          ${label ? `<span class="tag ${overdue ? 'tag-overdue' : 'tag-due'}">${label}</span>` : ''}
+        </div>
+      </div>
+      <button class="delete-btn" onclick="deleteAssignment('${a.id}')">×</button>
+    </div>
+  `;
+}
+
+// SCHEDULE
+function renderSchedule() {
+  const html = DAYS.map(day => {
+    const dayClasses = classes.filter(c => c.days && c.days.includes(day));
+    if (dayClasses.length === 0) return '';
+    return `
+      <div class="schedule-day">
+        <div class="day-label">${day}</div>
+        ${dayClasses.map(c => `
+          <div class="class-block" style="border-left-color:${c.color}">
+            <div class="class-block-time">${fmtTime(c.start)} – ${fmtTime(c.end)}</div>
+            <div>
+              <div class="class-block-name">${c.name}</div>
+              ${c.room ? `<div class="class-block-loc">📍 ${c.room}</div>` : ''}
+              ${c.instructor ? `<div class="class-block-loc">👤 ${c.instructor}</div>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
+
+  return `<div class="panel"><div class="panel-header"><div class="panel-title">Weekly Schedule</div></div><div class="schedule-list">${html || '<div class="empty-state"><div class="icon">🗓</div><p>No classes scheduled yet.<br>Add a class with meeting days.</p></div>'}</div></div>`;
+}
+
+function fmtTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const am = h < 12 ? 'AM' : 'PM';
+  const hh = h % 12 || 12;
+  return `${hh}:${m.toString().padStart(2,'0')} ${am}`;
+}
+
+// VIEWS
+function renderDashboard() {
+  const pending = [...assignments].filter(a => !a.done).sort((a, b) => (a.due || 'zzz').localeCompare(b.due || 'zzz')).slice(0, 10);
+  const done = [...assignments].filter(a => a.done).slice(-5).reverse();
+
+  const left = `
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Upcoming</div>
+        <button class="panel-action" onclick="openModal('assignment')">+ Add</button>
+      </div>
+      ${renderAssignmentList(pending)}
+    </div>
+  `;
+
+  const right = `
+    ${renderSchedule()}
+    ${done.length > 0 ? `
+      <div class="panel" style="margin-top:20px;">
+        <div class="panel-header"><div class="panel-title">Recently Completed</div></div>
+        ${renderAssignmentList(done)}
+      </div>
+    ` : ''}
+  `;
+
+  document.getElementById('main-content').innerHTML = renderStats() + `<div class="columns">${left}${right}</div>`;
+}
+
+function renderAllView(filterClassId = null) {
+  let items = [...assignments];
+  if (filterClassId) items = items.filter(a => a.classId === filterClassId);
+  items.sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    return (a.due || 'zzz').localeCompare(b.due || 'zzz');
+  });
+
+  const filterName = filterClassId ? className(filterClassId) : 'All Classes';
+  const content = `
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">${filterName} — All Assignments</div>
+        <button class="panel-action" onclick="openModal('assignment')">+ Add</button>
+      </div>
+      ${renderAssignmentList(items)}
+    </div>
+  `;
+  document.getElementById('main-content').innerHTML = renderStats() + content;
+}
+
+function renderScheduleView() {
+  document.getElementById('main-content').innerHTML = renderSchedule();
+}
+
+function setView(view, el) {
+  currentView = view;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const titles = { dashboard: 'Dashboard', schedule: 'Schedule', all: 'All Assignments' };
+  document.getElementById('page-title').textContent = titles[view] || 'Dashboard';
+  renderView();
+}
+
+function filterByClass(id) {
+  currentView = 'all';
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-title').textContent = className(id);
+  renderAllView(id);
+}
+
+function renderView() {
+  if (currentView === 'dashboard') renderDashboard();
+  else if (currentView === 'schedule') renderScheduleView();
+  else renderAllView();
+}
+
+// ACTIONS
+function toggleDone(id) {
+  const a = assignments.find(a => a.id === id);
+  if (!a) return;
+  a.done = !a.done;
+  save();
+  toast(a.done ? '✓ Marked complete!' : 'Marked as pending');
+  renderView();
+  renderSidebar();
+}
+
+function deleteAssignment(id) {
+  assignments = assignments.filter(a => a.id !== id);
+  save();
+  toast('Assignment removed');
+  renderView();
+  renderSidebar();
+}
+
+// MODALS
+function openModal(type) {
+  if (type === 'assignment') {
+    const sel = document.getElementById('assign-class');
+    sel.innerHTML = classes.length === 0
+      ? '<option value="">-- No classes yet --</option>'
+      : classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('assign-due').value = today;
+  }
+  if (type === 'class') {
+    buildColorPicker();
+    buildDayPicker();
+    document.getElementById('class-name-input').value = '';
+    document.getElementById('class-instructor').value = '';
+    document.getElementById('class-room').value = '';
+    selectedDays = [];
+    document.getElementById('class-start').value = '09:00';
+    document.getElementById('class-end').value = '10:00';
+  }
+  document.getElementById(`modal-${type}`).classList.add('open');
+}
+
+function closeModal(type) {
+  document.getElementById(`modal-${type}`).classList.remove('open');
+}
+
+function buildColorPicker() {
+  const cp = document.getElementById('color-picker');
+  cp.innerHTML = COLORS.map((c, i) => `
+    <div class="color-swatch ${c === selectedColor ? 'selected' : ''}" 
+      style="background:${c}" onclick="selectColor('${c}', this)"></div>
+  `).join('');
+}
+
+function selectColor(c, el) {
+  selectedColor = c;
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function buildDayPicker() {
+  const dp = document.getElementById('day-picker');
+  dp.innerHTML = DAYS.map(d => `
+    <div onclick="toggleDay('${d}', this)" style="
+      padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;
+      font-family:'DM Mono',monospace;border:1px solid var(--border);
+      background:${selectedDays.includes(d) ? 'var(--accent)' : 'transparent'};
+      color:${selectedDays.includes(d) ? '#111' : 'var(--muted)'};
+      transition:all 0.15s;
+    " id="day-${d}">${d}</div>
+  `).join('');
+}
+
+function toggleDay(d, el) {
+  if (selectedDays.includes(d)) {
+    selectedDays = selectedDays.filter(x => x !== d);
+    el.style.background = 'transparent';
+    el.style.color = 'var(--muted)';
+  } else {
+    selectedDays.push(d);
+    el.style.background = 'var(--accent)';
+    el.style.color = '#111';
+  }
+}
+
+function saveClass() {
+  const name = document.getElementById('class-name-input').value.trim();
+  if (!name) { alert('Please enter a class name.'); return; }
+  const c = {
+    id: Date.now().toString(),
+    name,
+    instructor: document.getElementById('class-instructor').value.trim(),
+    room: document.getElementById('class-room').value.trim(),
+    color: selectedColor,
+    days: [...selectedDays],
+    start: document.getElementById('class-start').value,
+    end: document.getElementById('class-end').value,
+  };
+  classes.push(c);
+  save();
+  closeModal('class');
+  toast(`📚 ${name} added!`);
+  renderSidebar();
+  renderView();
+}
+
+function saveAssignment() {
+  const name = document.getElementById('assign-name').value.trim();
+  if (!name) { alert('Please enter a title.'); return; }
+  const classId = document.getElementById('assign-class').value;
+  if (!classId) { alert('Please add a class first.'); return; }
+  const a = {
+    id: Date.now().toString(),
+    name,
+    classId,
+    type: document.getElementById('assign-type').value,
+    due: document.getElementById('assign-due').value,
+    priority: document.getElementById('assign-priority').value,
+    notes: document.getElementById('assign-notes').value.trim(),
+    done: false,
+    createdAt: Date.now(),
+  };
+  assignments.push(a);
+  save();
+  closeModal('assignment');
+  toast(`✏️ "${name}" added!`);
+  document.getElementById('assign-name').value = '';
+  document.getElementById('assign-notes').value = '';
+  renderSidebar();
+  renderView();
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) {
+      overlay.classList.remove('open');
+    }
+  });
+});
+
+// SEED DATA (first time)
+if (classes.length === 0 && assignments.length === 0) {
+  classes = [
+    { id: '1', name: 'Calculus II', instructor: 'Prof. Chen', room: 'Math 101', color: '#e8c547', days: ['Mon','Wed','Fri'], start: '09:00', end: '10:00' },
+    { id: '2', name: 'World History', instructor: 'Dr. Patel', room: 'Hall 204', color: '#5f9fe8', days: ['Tue','Thu'], start: '11:00', end: '12:30' },
+    { id: '3', name: 'Intro to CS', instructor: 'Prof. Lin', room: 'CS Lab 3', color: '#5fbf8a', days: ['Mon','Wed'], start: '14:00', end: '15:15' },
+  ];
+  const now = new Date();
+  const fmt = d => d.toISOString().split('T')[0];
+  const d = n => { const x = new Date(); x.setDate(x.getDate() + n); return fmt(x); };
+  assignments = [
+    { id: 'a1', name: 'Problem Set 5', classId: '1', type: 'Homework', due: d(2), priority: 'High', notes: '', done: false, createdAt: Date.now() },
+    { id: 'a2', name: 'Chapter 7 Reading', classId: '2', type: 'Reading', due: d(1), priority: 'Normal', notes: '', done: false, createdAt: Date.now() },
+    { id: 'a3', name: 'Binary Trees Lab', classId: '3', type: 'Lab', due: d(4), priority: 'Normal', notes: '', done: false, createdAt: Date.now() },
+    { id: 'a4', name: 'Midterm Exam', classId: '1', type: 'Exam', due: d(7), priority: 'High', notes: 'Chapters 1-6', done: false, createdAt: Date.now() },
+    { id: 'a5', name: 'WWI Essay Draft', classId: '2', type: 'Essay', due: d(-1), priority: 'High', notes: '', done: false, createdAt: Date.now() },
+    { id: 'a6', name: 'HW 4', classId: '3', type: 'Homework', due: d(-3), priority: 'Normal', notes: '', done: true, createdAt: Date.now() },
+  ];
+  save();
+}
+
+// INIT
+renderSidebar();
+renderView();
+</script>
+</body>
+</html>
